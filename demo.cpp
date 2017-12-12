@@ -9,6 +9,8 @@
 using namespace std;
 using namespace cimg_library;
 
+
+
 int main(int argc, char **argv) {
 
   if (argc != 3) {
@@ -40,5 +42,4 @@ int main(int argc, char **argv) {
     }
   }
   output.save(output_file);
-
 }
