@@ -8,7 +8,6 @@
    https://gist.github.com/sameer-j/7d944595a386fe70aa79, where the algorithm 
    was laid out. I will be modifying it to help us create something that will 
    work for our code.
-
 */
 
 
@@ -22,6 +21,7 @@
 
 #include <list>
 #include <algorithm>
+// #include <queue>
 
 using namespace std;
 using namespace cimg_library;
@@ -49,14 +49,21 @@ public:
   Graph(int x, int y, bool edge);
 
   // set the color of a pixel.
-  void setColor(Graph *curr, int color);
+  void setColor(int color);
+
+  int getColor();
 
   // get the x and y coords of the pixel.
-  int getX(Graph *curr);
-  int getY(Graph *curr);
+  int getX();
+  int getY();
 
   // set whether or not we've looked at it.
-  int setExplored(Graph *curr, int flag);
+  void setExplored(bool flag);
+
+  // get info on isEdge
+  bool edge();
+
+  bool isExplored();
 };
 
 //the constructor. Just sets the values of the graph up.
@@ -64,51 +71,132 @@ Graph::Graph(int x, int y, bool edge)
 {
   this->x = x;
   this->y = y;
-  setExplored(this, false);
-  setColor(this, 0);
+  this->explored = false;
+  this->color = 0;
   this->isEdge = edge;
 }
 
 // sets the color of the given graph node.
-void Graph::setColor( Graph *curr, int color)
+void Graph::setColor(int in_color)
 {
-  c = *curr;
-  c->color = int;
+  // Graph c = * curr;
+  this->color = in_color;
+}
+
+// gets the color of the given graph node.
+int Graph::getColor()
+{
+  // Graph c = * curr;
+  return this->color;
 }
 
 // sets the explored flag for a given node.
-void Graph::setExplored( Graph *curr, bool flag)
+void Graph::setExplored(bool flag)
 {
-  c = *curr;
-  c->explored = flag;
+  // Graph c = *curr;
+  this->explored = flag;
 }
 
 // returns the x value of the graph.
-void Graph::getX( Graph *curr ) 
+int Graph::getX() 
 {
-  c = *curr;
-  return c->x;
+  // Graph c = * curr;
+  return this->x;
 }
 
 // returns the y value of the graph
-void Graph::getY( Graph *curr )
+int Graph::getY()
 {
-  c = *curr;
-  return c->y;
+  // Graph c = * curr;
+  return this->y;
 }
 
+// get info on isEdge
+bool Graph::edge() {
+  return this->isEdge;
+}
+
+// get info on explored
+bool Graph::isExplored() {
+  return this->explored;
+}
+
+// Design:
+  /*
+    front and back are a sentinel nodes
+    bidirectional
+  */
+class Queue {
+private:
+  struct node {
+    Graph * item;
+    node * next;
+    node * prev;
+  };
+  node * front;
+  node * back;
+  bool isempty;
+public:
+  Queue();
+  bool isEmpty();
+  Graph * pop();
+  void push(Graph * graph);
+
+  // do this at some point lol
+  // void free_queue();
+};
+
+Queue::Queue() {
+  this->front = new(node);
+  this->back = new(node);
+  this->back->next = front;
+  this->front->prev = back;
+
+  this->isempty = true;
+}
+
+bool Queue::isEmpty() {
+  return this->isempty;
+}
+
+void Queue::push(Graph * graph) {
+  node * tmp = new(node);
+  tmp->item = graph;
+
+  tmp->prev = this->back;
+  tmp->next = this->back->next;
+  this->back->next->prev = tmp;
+  this->back->next = tmp;
+  this->isempty = false;
+}
+
+Graph * Queue::pop() {
+  node * tmp = this->front->prev;
+  Graph * toreturn = tmp->item;
+
+  // adjust
+  tmp->prev->next = tmp->next;
+  tmp->next->prev = tmp->prev;
+
+  if (this->back->next == this->front) {
+    this->isempty = true;
+  }
+  cout << toreturn->getColor() << " ";
+  free(tmp);
+  return toreturn;
+}
 
 int main(int argc, char * argv[])
 {
   char * input_file;
-  char * output_file = (char *) "sobel.png";
+  char * output_file = (char *) "segment.png";
 
   // take the arguments and store the filename and output name.
   if (argc < 3) {
     cout << "Give arguments in the form ./sobel <input_file> <output_file>";
   } 
   else if (argc == 2) {
-    input_file = argv[1]; 
+    input_file = argv[1];
   } 
   else {
     input_file = argv[1];
@@ -117,47 +205,114 @@ int main(int argc, char * argv[])
 
   CImg<double> src(input_file);
   CImg<double> output(src.width(), src.height(),1 ,1);
-  Graph ** graph;
 
-  graph = new Graph[512][512];
+  // graph queue = gq
+  Queue gq;
+
+  // color
+  int curColor = 1;
+
+  Graph graph[src.width()][src.height()];
+
+  // graph = new Graph[512][512];
+  // Graph graph = new Graph[src.width()][src.height()];
 
 // Algorithm:
-//   create a graph with x, y, isedge from segmented image
+//   create a graph with x, y, isEdge from segmented image
 //     all explored, color = 0
   for (int x = 0; x < src.width(); x++) {
     for (int y = 0; y < src.height(); y++) {
       graph[x][y] = * new Graph(x, y, (src(x,y) != 0));
+
+      //   if it's an edge:
+      if ( (graph[x][y].edge()) ) {
+
+  //     mark it as explored
+        graph[x][y].setExplored(true);
+      }
+    }
+  }
+  
+//   for every pixel in the graph (for row, for column)
+  for (int x = 0; x < src.width(); x++) {
+    for (int y = 0; y < src.height(); y++) {
+//   if it's not explored
+      if (! graph[x][y].isExplored()) {
+//     then, add to queue
+        gq.push(&graph[x][y]);
+
+//     while queue isnt' empty:
+        while (! gq.isEmpty()) {
+//       for the current pixel:
+          Graph tmp = * gq.pop();
+
+//         mark it as explored
+          tmp.setExplored(true);
+
+//         mark it with color n
+          // tmp.setColor(curColor);
+
+//       check the neighbors of the pixel
+//         make sure they're:
+            // In the bounds of the image
+            // Not already visited
+
+          int tmpx = tmp.getX();
+          int tmpy = tmp.getY();
+
+          // cout << "Working with item " << tmpx << ", " << tmpy << "with color" << tmp.getColor() << endl;
+
+          // left
+          if ( (tmpx - 1 >= 0) && (! graph[tmpx - 1][tmpy].isExplored()) ) {
+            // add to queue
+            graph[tmpx - 1][tmpy].setExplored(true);
+            graph[tmpx - 1][tmpy].setColor(curColor);
+            gq.push(&graph[tmpx - 1][tmpy]);
+          }
+
+          // right
+          if ( (tmpx + 1 < src.width()) && (! graph[tmpx + 1][tmpy].isExplored()) ) {
+            // add to queue
+            graph[tmpx + 1][tmpy].setExplored(true);
+            graph[tmpx + 1][tmpy].setColor(curColor);
+            gq.push(&graph[tmpx + 1][tmpy]);
+          }
+
+          // top
+          if ( (tmpy + 1 < src.height()) && (! graph[tmpx][tmpy + 1].isExplored()) ) {
+            // add to queue
+            graph[tmpx][tmpy + 1].setExplored(true);
+            graph[tmpx][tmpy + 1].setColor(curColor);
+            gq.push(&graph[tmpx][tmpy + 1]);
+          }
+
+          // bottom
+          if ( (tmpy -1 >= 0) && (! graph[tmpx][tmpy -1].isExplored()) ) {
+            // add to queue
+            graph[tmpx][tmpy - 1].setExplored(true);
+            graph[tmpx][tmpy - 1].setColor(curColor);
+            gq.push(&graph[tmpx][tmpy - 1]);
+          }
+        }
+        ++curColor;
+      }
     }
   }
 
-//   for every pixel in the graph (for row, for column)
-//   if it's an edge:
-//     mark it as an edge
-//     mark it as explored
+  // exporting to file
+  for(int x = 1; x < src.width() - 1; x++){
+      for(int y = 1; y < src.height() - 1; y++){
+        if (graph[x][y].edge()) {
+          output(x,y) = 255;
+        } else {
+          output(x,y) = (int) (
+            (float) graph[x][y].getColor() * ((float) 255 / (float)curColor)
+          );
+        }
+      }
+  }
 
-//   else if it's not explored
-//     then, add to worklist
-
-//     while worklist isnt' empty:
-//       for the current pixel:
-//         mark it as explored
-//         mark it with color n
-
-//       check the neighbors of the pixel
-//         make sure the pixels are within the bounds of the image
-
-//       if these pixels aren't edges:
-//         add them to the worklist
-
-//       otherwise:
-//         mark them as edges
-//         mark them as explored 
-
-//     after clearing the worklist:
-//       increment color by 1
-
-  
-  
+  output.save(output_file);
 
   return 0;
 }
