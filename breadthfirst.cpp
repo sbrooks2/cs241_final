@@ -22,6 +22,7 @@
 #include <list>
 #include <algorithm>
 // #include <queue>
+#include <math.h>
 
 using namespace std;
 using namespace cimg_library;
@@ -30,7 +31,6 @@ using namespace cimg_library;
 class Graph
 {
   int x, y;
-  Graph *up, *left, *right, *down;
   int color;
   bool explored;
   bool isEdge;
@@ -138,6 +138,7 @@ private:
   bool isempty;
 public:
   Queue();
+  ~Queue();
   bool isEmpty();
   Graph * pop();
   void push(Graph * graph);
@@ -153,6 +154,11 @@ Queue::Queue() {
   this->front->prev = back;
 
   this->isempty = true;
+}
+
+Queue::~Queue() {
+  delete[] front;
+  delete[] back;
 }
 
 bool Queue::isEmpty() {
@@ -181,10 +187,11 @@ Graph * Queue::pop() {
   if (this->back->next == this->front) {
     this->isempty = true;
   }
-  cout << toreturn->getColor() << " ";
-  free(tmp);
+  // cout << toreturn->getColor() << " ";
+  // delete(tmp);
   return toreturn;
 }
+
 
 int main(int argc, char * argv[])
 {
@@ -204,7 +211,7 @@ int main(int argc, char * argv[])
   }
 
   CImg<double> src(input_file);
-  CImg<double> output(src.width(), src.height(),1 ,1);
+  CImg<double> output(src.width(), src.height(), 1 , 3, 0);
 
   // graph queue = gq
   Queue gq;
@@ -212,9 +219,16 @@ int main(int argc, char * argv[])
   // color
   int curColor = 1;
 
-  Graph graph[src.width()][src.height()];
+  // we have to allocate to memory
+  // because otherwise, the two-dimensional graph is too big
+  // and we get a STACK OVERLFLOW
+  // (I am happy to say I looked on stack overflow to debug this)
+  Graph ** graph = new Graph * [src.width()];
+  for (int i = 0; i < src.width(); ++i) {
+    graph[i] = new Graph[src.height()];
+  }
 
-  // graph = new Graph[512][512];
+  // this breaks with large images
   // Graph graph = new Graph[src.width()][src.height()];
 
 // Algorithm:
@@ -222,16 +236,16 @@ int main(int argc, char * argv[])
 //     all explored, color = 0
   for (int x = 0; x < src.width(); x++) {
     for (int y = 0; y < src.height(); y++) {
-      graph[x][y] = * new Graph(x, y, (src(x,y) != 0));
-
+      // graph[x][y] = * new Graph(x, y, (src(x,y) != 0));
+      graph[x][y] = * new Graph(x, y, (src(x,y) >= 125));
       //   if it's an edge:
       if ( (graph[x][y].edge()) ) {
-
   //     mark it as explored
         graph[x][y].setExplored(true);
       }
     }
   }
+
   
 //   for every pixel in the graph (for row, for column)
   for (int x = 0; x < src.width(); x++) {
@@ -299,20 +313,72 @@ int main(int argc, char * argv[])
     }
   }
 
+  // delete(&gq);
+
   // exporting to file
-  for(int x = 1; x < src.width() - 1; x++){
-      for(int y = 1; y < src.height() - 1; y++){
+
+  for(int x = 0; x < src.width(); x++){
+      for(int y = 0; y < src.height(); y++){
         if (graph[x][y].edge()) {
-          output(x,y) = 255;
+          output(x,y,0) = 255;
+          output(x,y,1) = 255;
+          output(x,y,2) = 255;
         } else {
-          output(x,y) = (int) (
-            (float) graph[x][y].getColor() * ((float) 255 / (float)curColor)
+
+          // output(x,y,0,0) = 127;
+          // cout << "printed color 1\n";
+
+          // attempting color
+          // output(x,y,0) = (double) (
+          //   (float) graph[x][y].getColor() * ((float) 255 / (float)curColor) );
+          // output(x,y,1) = (double) (
+          //   (float) graph[x][y].getColor() * ((float) 255 / (float)curColor) );
+          // output(x,y,2) = (double) (
+          //   (float) (curColor - graph[x][y].getColor()) * ((float) 255 / (float)curColor) );
+
+
+          output(x,y,0) = fmod((double) (
+                      (double) (0 + (float) graph[x][y].getColor() * 255.0/(curColor-1))), 255
           );
+
+          output(x,y,1) = fmod((double) (
+                      (double) (85 + (float)  graph[x][y].getColor() * 255.0/(curColor-1))), 255
+          );
+
+          output(x,y,2) = fmod((double) (
+                      (double) (170 + (float) graph[x][y].getColor() * 255.0/(curColor-1))), 255
+          );
+
+          // color algorithm
+
+          // 0 -> 127 -> 255
+          // output(x,y,0) = (double) (
+          //   (float) graph[x][y].getColor() *
+          //   ((float) 255 / (float)curColor)
+          //   );
+
+          // // 127 -> 255 -> 0
+          // output(x,y,1) = (double) (
+          //   ((float) (( graph[x][y].getColor() + 
+          //                  (long) (((float) curColor)/3)
+          //                  ) % 255)) * 
+          //   ((float) 255 / (float)curColor)
+          //   );
+
+          // // 255 -> 0 -> 127
+          // output(x,y,2) = (double) (
+          //   ((float) (( graph[x][y].getColor() + 
+          //                  (long) (((float) 2*curColor)/3)
+          //                  ) % 255)) * 
+          //   ((float) 255 / (float)curColor)
+          //   );
         }
+        // delete(&graph[x][y]);
       }
   }
 
   output.save(output_file);
-
+  // delete(&output);
+  // delete(&src);
   return 0;
 }
