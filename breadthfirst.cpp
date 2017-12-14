@@ -1,13 +1,8 @@
-/* Adam Jussila
+/* Adam Jussila, Sawyer Brooks, Rebecca Posner, and Patrick Smith
    This is a breadth first search algorithm, which is aimed at taking an edge
    map of a given image, then filling in the regions that constitute a single
    objet with the same color. Each object should be a different color.
    12/11/17
-
-   The main inspiritation was taken from:
-   https://gist.github.com/sameer-j/7d944595a386fe70aa79, where the algorithm 
-   was laid out. I will be modifying it to help us create something that will 
-   work for our code.
 */
 
 
@@ -64,6 +59,8 @@ public:
   bool edge();
 
   bool isExplored();
+
+  void setedge(bool flag);
 };
 
 //the constructor. Just sets the values of the graph up.
@@ -119,6 +116,10 @@ bool Graph::edge() {
 // get info on explored
 bool Graph::isExplored() {
   return this->explored;
+}
+
+void Graph::setedge(bool flag) {
+  this->isEdge = flag;
 }
 
 // Design:
@@ -237,7 +238,12 @@ int main(int argc, char * argv[])
   for (int x = 0; x < src.width(); x++) {
     for (int y = 0; y < src.height(); y++) {
       // graph[x][y] = * new Graph(x, y, (src(x,y) != 0));
-      graph[x][y] = * new Graph(x, y, (src(x,y) >= 125));
+      graph[x][y] = * new Graph(x, y, (src(x,y) >= 130));
+      
+      if (x == 0 || y == 0) {
+        graph[x][y].setedge(true);
+      }
+
       //   if it's an edge:
       if ( (graph[x][y].edge()) ) {
   //     mark it as explored
@@ -325,18 +331,6 @@ int main(int argc, char * argv[])
           output(x,y,2) = 255;
         } else {
 
-          // output(x,y,0,0) = 127;
-          // cout << "printed color 1\n";
-
-          // attempting color
-          // output(x,y,0) = (double) (
-          //   (float) graph[x][y].getColor() * ((float) 255 / (float)curColor) );
-          // output(x,y,1) = (double) (
-          //   (float) graph[x][y].getColor() * ((float) 255 / (float)curColor) );
-          // output(x,y,2) = (double) (
-          //   (float) (curColor - graph[x][y].getColor()) * ((float) 255 / (float)curColor) );
-
-
           output(x,y,0) = fmod((double) (
                       (double) (0 + (float) graph[x][y].getColor() * 255.0/(curColor-1))), 255
           );
@@ -348,30 +342,6 @@ int main(int argc, char * argv[])
           output(x,y,2) = fmod((double) (
                       (double) (170 + (float) graph[x][y].getColor() * 255.0/(curColor-1))), 255
           );
-
-          // color algorithm
-
-          // 0 -> 127 -> 255
-          // output(x,y,0) = (double) (
-          //   (float) graph[x][y].getColor() *
-          //   ((float) 255 / (float)curColor)
-          //   );
-
-          // // 127 -> 255 -> 0
-          // output(x,y,1) = (double) (
-          //   ((float) (( graph[x][y].getColor() + 
-          //                  (long) (((float) curColor)/3)
-          //                  ) % 255)) * 
-          //   ((float) 255 / (float)curColor)
-          //   );
-
-          // // 255 -> 0 -> 127
-          // output(x,y,2) = (double) (
-          //   ((float) (( graph[x][y].getColor() + 
-          //                  (long) (((float) 2*curColor)/3)
-          //                  ) % 255)) * 
-          //   ((float) 255 / (float)curColor)
-          //   );
         }
         // delete(&graph[x][y]);
       }
