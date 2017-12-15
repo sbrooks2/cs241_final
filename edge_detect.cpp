@@ -78,6 +78,7 @@ int main(int argc, char*argv[]) {
   // take the arguments and store the filename and output name.
   if (argc < 3) {
     cout << "Give arguments in the form ./sobel <input_file> <output_file>";
+    exit(0);
   } 
   else if (argc == 2) {
     input_file = argv[1]; 
@@ -93,7 +94,7 @@ int main(int argc, char*argv[]) {
   src.blur(0.5);
   int gx, gy, sum;
 
-  // check greyscale
+  // check and apply greyscale if necessary
   if (!(src.spectrum() == 1)) {
     for (int x = 0; x < src.width(); x++) {
       for (int y = 0; y < src.height(); y++) {
@@ -108,9 +109,11 @@ int main(int argc, char*argv[]) {
  
   for(int y = 1; y < src.width(); y++){
     for(int x = 1; x < src.height(); x++){
+
+      // can run one of xGradsobel, xGradrob, or xGradprew (same for y)
       gx = xGradsobel(&src, x, y);
       gy = yGradsobel(&src, x, y);
-      // sum = sqrt(pow(gx, 2) + pow(gy, 2));
+
       sum = abs(gx) + abs(gy);
       sum = sum > 255 ? 255:sum;
       sum = sum < 0 ? 0 : sum;
@@ -120,10 +123,12 @@ int main(int argc, char*argv[]) {
 
   // edge setting
   // set all piels to 100% on or off
-  for(int y = 1; y < src.width(); y++){
-      for(int x = 1; x < src.height(); x++){
+  for(int y = 0; y < src.width(); y++){
+      for(int x = 0; x < src.height(); x++){
         // cout << "Pixel (" << x << ", " << y << ") has val " << output(y,x) << "\n";
         if (output(y,x) > (int) (0.25*(float)(255)) ) {
+          output(y,x) = 255;
+        } else if (y == 0 || x == 0 || y == src.width()-1 || x == src.height()-1) {
           output(y,x) = 255;
         } else {
           output(y,x) = 0;

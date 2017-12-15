@@ -1,7 +1,9 @@
-all: edge segment
+TARGETS = edge segment
 
-to_greyscale: cimg-demo.cpp
-	g++ -g -o $@ $^ -I/opt/X11/include -L/opt/X11/lib -lX11 -lpthread -std=gnu++0x
+all: $(TARGETS)
+
+# to_greyscale: cimg-demo.cpp
+# 	g++ -g -o $@ $^ -I/opt/X11/include -L/opt/X11/lib -lX11 -lpthread -std=gnu++0x
 
 edge: edge_detect.cpp
 	g++ -o $@ $^ -I/opt/X11/include -L/opt/X11/lib -lX11 -lpthread -std=gnu++0x
@@ -9,9 +11,9 @@ edge: edge_detect.cpp
 segment: breadthfirst.cpp
 	g++ -fstack-check -o $@ $^ -I/opt/X11/include -L/opt/X11/lib -lX11 -lpthread -std=gnu++0x
 
-hello: hello.cpp
-		g++ -o $@ $^
+# hello: hello.cpp
+# 		g++ -o $@ $^
 
 
 clean:
-	rm p1
+	rm -f *.o $(TARGETS) *~

@@ -143,11 +143,9 @@ public:
   bool isEmpty();
   Graph * pop();
   void push(Graph * graph);
-
-  // do this at some point lol
-  // void free_queue();
 };
 
+// 0 arg constructor
 Queue::Queue() {
   this->front = new(node);
   this->back = new(node);
@@ -156,16 +154,18 @@ Queue::Queue() {
 
   this->isempty = true;
 }
-
+// deconstructor
 Queue::~Queue() {
   delete[] front;
   delete[] back;
 }
 
+// accessor for empty
 bool Queue::isEmpty() {
   return this->isempty;
 }
 
+// adds an element to the back of the graph
 void Queue::push(Graph * graph) {
   node * tmp = new(node);
   tmp->item = graph;
@@ -177,6 +177,7 @@ void Queue::push(Graph * graph) {
   this->isempty = false;
 }
 
+// removes and returns the first item in the queue
 Graph * Queue::pop() {
   node * tmp = this->front->prev;
   Graph * toreturn = tmp->item;
@@ -188,11 +189,46 @@ Graph * Queue::pop() {
   if (this->back->next == this->front) {
     this->isempty = true;
   }
-  // cout << toreturn->getColor() << " ";
-  // delete(tmp);
   return toreturn;
 }
 
+// following 4 are the methods for getting the RGB data
+
+// this is an alternate for red, but we found the second implementation to work better
+// int r_value(int color, int curColor) {
+//   int sum = (int) (2*color) * (255.0/(float)curColor);
+
+//   if (sum > 255) {
+//     return 255 - (sum - 255);
+//   } return sum;
+// }
+
+int r_value(int color, int curColor) {
+  int sum = 170 - (int) (2*color) * (255.0/(float)curColor);
+  if ((255 - (sum - 255)) <= 0) {
+    return color * (255.0/(float)curColor) - 85;
+  } else if (sum > 255) {
+    return 255 - (sum - 255);
+  } return sum;
+}
+
+int g_value(int color, int curColor) {
+  int sum = 85 + (int) (2*color) * (255.0/(float)curColor);
+  if ((255 - (sum - 255)) <= 0) {
+    return color * (255.0/(float)curColor) - 170;
+  } else if (sum > 255) {
+    return 255 - (sum - 255);
+  } return sum;
+}
+
+int b_value(int color, int curColor) {
+  int sum = 170 + (int) (2*color) * (255.0/(float)curColor);
+  if ((255 - (sum - 255)) <= 0) {
+    return color * (255.0/(float)curColor) - 85;
+  } else if (sum > 255) {
+    return 255 - (sum - 255);
+  } return sum;
+}
 
 int main(int argc, char * argv[])
 {
@@ -280,7 +316,7 @@ int main(int argc, char * argv[])
           int tmpx = tmp.getX();
           int tmpy = tmp.getY();
 
-          // cout << "Working with item " << tmpx << ", " << tmpy << "with color" << tmp.getColor() << endl;
+          // getting adjacent pixels, adding them to the stack
 
           // left
           if ( (tmpx - 1 >= 0) && (! graph[tmpx - 1][tmpy].isExplored()) ) {
@@ -319,10 +355,7 @@ int main(int argc, char * argv[])
     }
   }
 
-  // delete(&gq);
-
-  // exporting to file
-
+  // exporting the segmented information to file
   for(int x = 0; x < src.width(); x++){
       for(int y = 0; y < src.height(); y++){
         if (graph[x][y].edge()) {
@@ -331,24 +364,28 @@ int main(int argc, char * argv[])
           output(x,y,2) = 255;
         } else {
 
-          output(x,y,0) = fmod((double) (
-                      (double) (0 + (float) graph[x][y].getColor() * 255.0/(curColor-1))), 255
-          );
+          output(x,y,0) = r_value(graph[x][y].getColor(), curColor - 1);
+          output(x,y,1) = g_value(graph[x][y].getColor(), curColor - 1);
+          output(x,y,2) = b_value(graph[x][y].getColor(), curColor - 1);
 
-          output(x,y,1) = fmod((double) (
-                      (double) (85 + (float)  graph[x][y].getColor() * 255.0/(curColor-1))), 255
-          );
+          // old coloring algorithm
+          // if you want an alternative coloring uncomment this and comment out the above three lines
 
-          output(x,y,2) = fmod((double) (
-                      (double) (170 + (float) graph[x][y].getColor() * 255.0/(curColor-1))), 255
-          );
+          // output(x,y,0) = fmod((double) (
+          //             (double) (0 + (float) graph[x][y].getColor() * 255.0/(curColor-1))), 255
+          // );
+
+          // output(x,y,1) = fmod((double) (
+          //             (double) (85 + (float) graph[x][y].getColor() * 255.0/(curColor-1))), 255
+          // );
+
+          // output(x,y,2) = fmod((double) (
+          //              (double) (170 + (float) graph[x][y].getColor() * 255.0/(curColor-1))), 255
+          // );
         }
-        // delete(&graph[x][y]);
       }
   }
 
   output.save(output_file);
-  // delete(&output);
-  // delete(&src);
   return 0;
 }
