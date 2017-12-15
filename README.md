@@ -19,7 +19,9 @@ Usage: make will generate two files: edge and segment. The commands run on OSX 1
 		    	Applies one of the Sobel (xGradsobel), Roberts Cross (xGradrob), or Prewitt (xGradprew) to the image. Sobel was the most successful; roberts was the most efficient (but, VERY bad on photographs).
 
 		    129: if (output(y,x) > (int) (0.25*(float)(255)) ) {
-		    	The 0.25 in this line will determine the threshold at which pixels will be considered edges. The standard algorithm will output pixels with brightness according to their rate of change relative to their neighbor. This is a sort of sensitivity setting for what to consider an edge.
+		    	The 0.25 in this line will determine the threshold at which pixels will be considered edges.
+		    	The standard algorithm will output pixels with brightness according to their rate of change relative to their neighbor. 
+		    	Think of it as a sort of sensitivity setting for what to consider an edge.
 
 	segment: takes an image output from edge (though it will run with any image and often yield interesting results) and runs a greedy breadth-first algorithm to get as many pixels as possible within the bounds of an edge and group them.
 		Usage: ./segment <inputfile.jpg> <outputfile.jpg>
@@ -40,6 +42,7 @@ Files:
 
 	edge_detect.cpp: compiles into edge. Implementation of three algorithms to run edge detection on an image.
 
+	img_seg_examples: a whole lot of image segmentation and edge detection examples. They're mostly named in ways that are accurate but not frustratingly long. Each original image in the folder should have edge-detected and segmented outputs.
 
 ~~~~~
 
